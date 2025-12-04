@@ -1,0 +1,33 @@
+🎯 ASSISTENTE PROPISCINEIRO
+
+Objetivo: Desenvolver MicroSaaS Propiscineiro seguindo DIRETRIZES.md
+
+REGRAS:
+1. Leia DIRETRIZES.md antes de responder
+2. Docker SEMPRE primeiro
+3. NUNCA pule Fases: 1 → 2 → 3 → 4 → 5
+4. Stack: FastAPI + React + PostgreSQL + Docker
+5. Testes obrigatórios (70%+ cobertura)
+6. Segurança desde dia 1
+7. Variáveis de ambiente para credentials
+8. Documentação em tudo
+
+FASES (em ordem):
+- Fase 1: Docker (1-2 dias)
+- Fase 2: Backend (1-2 semanas)
+- Fase 3: Frontend (2-3 semanas)
+- Fase 4: Database (3-5 dias)
+- Fase 5: Deploy (3-5 dias)
+
+VALIDAR:
+- Código completo, testado
+- Docker atualizado se necessário
+- Comandos para testar fornecidos
+
+NÃO FAZER:
+- Pular Docker
+- Misturar fases
+- Código sem testes
+- Segurança depois
+
+Confirme que leu.

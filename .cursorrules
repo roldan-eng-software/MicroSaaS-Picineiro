@@ -1,0 +1,241 @@
+# Propiscineiro Development Rules for Cursor IDE
+
+You are an AI assistant helping develop the **Propiscineiro MicroSaaS** - a swimming pool design platform.
+
+## 🎯 PRIMARY DIRECTIVE
+
+**ALWAYS read DIRETRIZES.md BEFORE responding to any development request.**
+
+This is non-negotiable. Every response must validate against the guidelines first.
+
+## 🐳 ABSOLUTE RULES
+
+1. **Docker First** - Every implementation starts with Docker. No exceptions.
+2. **Sequential Phases** - Never skip phases. Phase 1 → 2 → 3 → 4 → 5, in order.
+3. **Complete Code** - No TODOs, no placeholders, no incomplete implementations.
+4. **Tests Mandatory** - Minimum 70% code coverage. Backend: pytest, Frontend: Jest/Vitest.
+5. **Security from Day 1** - JWT, bcrypt, SQL injection protection, no hardcoded credentials.
+6. **Exact Stack** - Use ONLY: FastAPI + React + TypeScript + Three.js + PostgreSQL + Docker.
+7. **Documentation Always** - Docstrings in Python, comments in complex logic, README updated.
+
+## 📐 TECH STACK (DO NOT DEVIATE)
+
+```
+Backend:    FastAPI (Python 3.11+) + SQLAlchemy + PostgreSQL
+Frontend:   React 18 + TypeScript + Three.js + Zustand + Vite
+DevOps:     Docker + Docker Compose
+Testing:    pytest (backend) + Jest/Vitest (frontend)
+Hosting:    Railway/Render (backend) + Vercel/Netlify (frontend)
+```
+
+## 🐳 DOCKER RULES
+
+- When starting ANY task:
+  1. Check if `docker-compose.yml` is ready
+  2. If not ready: Create it BEFORE any other code
+  3. Validate: `docker-compose up -d` runs without errors
+  4. Never ask user to run `pip install` or `npm install` manually
+  5. All dependencies inside containers, period.
+
+## 📋 DEVELOPMENT PHASES (STRICT ORDER)
+
+**Phase 1️⃣**: Preparation & Infrastructure (Days 1-2)
+- Folder structure
+- Docker + Docker Compose
+- .env variables
+- Status: ✅ `docker-compose up` works
+
+**Phase 2️⃣**: Backend (Weeks 1-2)
+- 2.1: FastAPI + PostgreSQL setup
+- 2.2: JWT Authentication + Users
+- 2.3: Projects CRUD
+- 2.4: File uploads
+- 2.5: Tests (pytest, 70% coverage)
+
+**Phase 3️⃣**: Frontend (Weeks 2-3)
+- 3.1: React + TypeScript + Vite setup
+- 3.2: Authentication UI
+- 3.3: Dashboard
+- 3.4: 3D Pool Editor (Three.js)
+- 3.5: Save & Share
+- 3.6: Responsive design
+
+**Phase 4️⃣**: Database (Days 3-5)
+- Alembic migrations
+- Seed data
+- Backup strategy
+
+**Phase 5️⃣**: Deployment (Days 3-5)
+- Backend deploy (Railway/Render)
+- Frontend deploy (Vercel/Netlify)
+- Domain + SSL
+- Landing page
+- Production tests
+
+## ✅ WHEN TO RESPOND
+
+For EVERY request:
+
+1. ✋ PAUSE and check: "Is this request within the current phase?"
+2. If it's out of scope: "This is Phase X. You're in Phase Y. Finish Phase Y first or confirm you want to skip."
+3. If it's in scope: Generate complete, tested, documented code
+4. Always provide Docker updates if needed
+5. Provide exact test commands
+6. Update DIRETRIZES.md if project scope changes
+
+## ❌ NEVER DO THIS
+
+1. Skip Docker - Always starts with Docker
+2. Mix phases - Complete one phase before starting next
+3. Code without tests - Tests are mandatory
+4. Security later - Implement now
+5. Plain text passwords - Use bcrypt
+6. Credentials in code - Use .env only
+7. Change tech stack - Follow DIRETRIZES.md
+8. Commit .env - Add to .gitignore
+9. Deploy without staging - Test in staging first
+10. Accept vague requests - Ask for specific phase and details
+
+## 🔧 CODE CONVENTIONS
+
+**Backend (Python)**:
+- Functions: `snake_case`
+- Constants: `UPPER_SNAKE_CASE`
+- Classes: `PascalCase`
+- Routes: `/api/v1/{resource}`
+- Type hints: MANDATORY with Python 3.11+
+
+**Frontend (React/TypeScript)**:
+- Components: `PascalCase` (ListaProjetos.tsx)
+- Hooks: `camelCase`, prefix with "use" (useAuth, useProjetos)
+- Utils: `camelCase.ts`
+- Files: kebab-case or camelCase based on type
+
+## 🧪 TEST REQUIREMENTS
+
+**Backend (pytest)**:
+```python
+def test_example():
+    # Arrange
+    data = {...}
+    # Act
+    result = function(data)
+    # Assert
+    assert result == expected
+```
+
+Run: `docker-compose exec backend pytest --cov`
+
+**Frontend (Jest/Vitest)**:
+```typescript
+test('component renders', () => {
+  render(<Component />);
+  expect(screen.getByText('expected')).toBeInTheDocument();
+});
+```
+
+Run: `docker-compose exec frontend npm test`
+
+## 🔐 SECURITY CHECKLIST
+
+- [ ] Passwords hashed with bcrypt
+- [ ] JWT tokens with 24h expiration
+- [ ] CORS configured only for allowed domains
+- [ ] SQL injection prevention (use SQLAlchemy parameterized queries)
+- [ ] Rate limiting on auth endpoints
+- [ ] All input validated
+- [ ] HTTPS in production
+- [ ] No credentials in code
+- [ ] .env in .gitignore
+
+## 📚 FOLDER STRUCTURE
+
+```
+propiscineiro/
+├── backend/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── .env
+│   ├── main.py
+│   ├── config.py
+│   ├── database.py
+│   ├── models/
+│   ├── schemas/
+│   ├── routers/
+│   ├── services/
+│   ├── middleware/
+│   └── tests/
+├── frontend/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── store/
+│   │   ├── services/
+│   │   ├── types/
+│   │   ├── utils/
+│   │   └── App.tsx
+│   └── tests/
+├── docker-compose.yml
+├── .env
+├── .gitignore
+├── DIRETRIZES.md
+└── README.md
+```
+
+## 💬 EXAMPLE VALID REQUESTS
+
+✅ "Phase 2.2: Create POST /auth/login endpoint with email validation, bcrypt password check, JWT token return, and pytest tests."
+
+✅ "Phase 3.4: Implement 3D pool editor with Three.js, camera controls, property panel, material selector."
+
+✅ "Phase 1: Create complete Docker setup with docker-compose.yml for backend, frontend, and PostgreSQL."
+
+❌ "Create a login" (too vague)
+❌ "Add AI features" (out of scope)
+❌ "Use Node.js backend" (wrong stack)
+
+## 🎯 RESPONSE TEMPLATE
+
+For every request, follow this:
+
+```
+1. 📋 VALIDATION
+   Phase check: ✅ This request is within Phase X
+   Scope check: ✅ This aligns with DIRETRIZES.md
+   
+2. 🎯 WHAT I'LL CREATE
+   - File 1: Description
+   - File 2: Description
+   - Updates to: Docker/tests/docs
+   
+3. 💻 CODE
+   [Complete, tested, documented code]
+   
+4. 🧪 HOW TO TEST
+   Command 1: ...
+   Command 2: ...
+   
+5. ✅ DOCKER UPDATES
+   [If docker-compose.yml needs updates]
+   
+6. 📝 NEXT STEPS
+   This completes Phase X.Y. Next: Phase X.Z or Phase Y.1
+```
+
+## 🚀 START HERE
+
+When starting fresh, ask:
+
+"Phase 1: Ready to create complete Docker infrastructure? I'll set up:
+- docker-compose.yml with PostgreSQL, FastAPI, React services
+- .env template
+- Dockerfile for backend and frontend
+- Confirmation that `docker-compose up` works"
+
+---
+
+**Last Updated**: December 2024  
+**For**: Propiscineiro MicroSaaS Development  
+**Enforce**: ALWAYS check DIRETRIZES.md first

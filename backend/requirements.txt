@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic==2.* # Para Pydantic v2
+pydantic-settings # Para gerenciar as configurações
+python-jose[cryptography] # Para PyJWT
+passlib # Removendo [bcrypt] pois vamos usar bcrypt diretamente
+bcrypt # Adicionado explicitamente
+psycopg2-binary # Adaptador PostgreSQL
+alembic # Para migrações de banco de dados
+email-validator # Para validação de EmailStr em Pydantic
+python-json-logger # Para logs em formato JSON
+python-multipart # Para FastAPI Form data (OAuth2PasswordRequestForm)
