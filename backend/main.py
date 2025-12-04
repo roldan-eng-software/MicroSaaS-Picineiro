@@ -8,7 +8,7 @@ from app.schemas import User, UserCreate, UserLogin, Project, ProjectCreate, Pro
 from app.models import User as DBUser, Project as DBProject # Importar modelo Project
 from app.security import get_password_hash, verify_password
 from app.auth import create_access_token, get_current_user # Importar função de criação de token
-from app.database import SessionLocal, engine, Base
+from app.database import SessionLocal, engine, Base, get_db
 from app.config import settings, LOGGING_CONFIG # Importar configurações de logging
 from app.routers import upload # Importar router de upload
 from fastapi.staticfiles import StaticFiles # Importar StaticFiles
@@ -24,14 +24,6 @@ app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 
 # Include Routers
 app.include_router(upload.router, prefix="/api/v1")
-
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @app.on_event("startup")
 async def startup_event():

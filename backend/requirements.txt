@@ -11,3 +11,5 @@ alembic # Para migrações de banco de dados
 email-validator # Para validação de EmailStr em Pydantic
 python-json-logger # Para logs em formato JSON
 python-multipart # Para FastAPI Form data (OAuth2PasswordRequestForm)
+pytest
+httpx
