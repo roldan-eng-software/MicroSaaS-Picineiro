@@ -10,7 +10,7 @@ from app.security import get_password_hash, verify_password
 from app.auth import create_access_token, get_current_user # Importar função de criação de token
 from app.database import SessionLocal, engine, Base, get_db
 from app.config import settings, LOGGING_CONFIG # Importar configurações de logging
-from app.routers import upload, admin # Importar routers
+from app.routers import upload, admin, clients, pools, services, budgets # Importar routers
 from fastapi.staticfiles import StaticFiles # Importar StaticFiles
 from fastapi.middleware.cors import CORSMiddleware # Importar CORSMiddleware
 
@@ -40,6 +40,10 @@ app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 # Include Routers
 app.include_router(upload.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
+app.include_router(clients.router, prefix="/api/v1")
+app.include_router(pools.router, prefix="/api/v1")
+app.include_router(services.router, prefix="/api/v1")
+app.include_router(budgets.router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def startup_event():
