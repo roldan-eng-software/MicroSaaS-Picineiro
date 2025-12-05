@@ -29,6 +29,11 @@ export default function Layout({ children }: LayoutProps) {
                             <h1 className="text-2xl font-bold text-gray-800">Propiscineiro</h1>
                         </div>
 
+                        <div className="hidden md:flex space-x-8">
+                            <a href="/dashboard" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                            <a href="/dashboard/clientes" className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">Clientes</a>
+                        </div>
+
                         <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-2 text-gray-700">
                                 <User className="w-5 h-5" />

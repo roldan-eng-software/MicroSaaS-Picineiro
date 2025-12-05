@@ -9,6 +9,9 @@ import UserManagementPage from './pages/admin/UserManagementPage'; // Import Use
 import GlobalSettingsPage from './pages/admin/GlobalSettingsPage'; // Import GlobalSettingsPage
 import SystemLogsPage from './pages/admin/SystemLogsPage'; // Import SystemLogsPage
 import LandingPage from './pages/landing/LandingPage'; // Import LandingPage
+import ClientList from './pages/clients/ClientList';
+import ClientCreate from './pages/clients/ClientCreate';
+import ClientDetails from './pages/clients/ClientDetails';
 
 // Componente para decidir qual dashboard mostrar
 function DashboardRouter() {
@@ -25,7 +28,7 @@ function DashboardRouter() {
 function ProtectedRoute() {
   const { isAuthenticated, token, fetchUser, user } = useAuthStore();
   const storedToken = localStorage.getItem('token');
-  
+
   useEffect(() => {
     // Se há um token e o usuário ainda não foi carregado, tenta buscar
     if (storedToken && !user && !isAuthenticated) {
@@ -63,16 +66,21 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        
+
         {/* Rota para a Landing Page (não autenticados) ou redirecionamento para o Dashboard (autenticados) */}
         <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-        
+
         {/* Rotas protegidas */}
         <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardRouter />} /> {/* Usa o DashboardRouter aqui */}
-            <Route path="/admin/users" element={<UserManagementPage />} /> {/* Nova rota para gerenciamento de usuários */}
-            <Route path="/admin/settings" element={<GlobalSettingsPage />} /> {/* Nova rota para configurações globais */}
-            <Route path="/admin/system-logs" element={<SystemLogsPage />} /> {/* Nova rota para logs do sistema */}
+          <Route path="/dashboard" element={<DashboardRouter />} /> {/* Usa o DashboardRouter aqui */}
+          <Route path="/admin/users" element={<UserManagementPage />} /> {/* Nova rota para gerenciamento de usuários */}
+          <Route path="/admin/settings" element={<GlobalSettingsPage />} /> {/* Nova rota para configurações globais */}
+          <Route path="/admin/system-logs" element={<SystemLogsPage />} /> {/* Nova rota para logs do sistema */}
+
+          {/* Client Routes */}
+          <Route path="/dashboard/clientes" element={<ClientList />} />
+          <Route path="/dashboard/clientes/novo" element={<ClientCreate />} />
+          <Route path="/dashboard/clientes/:id" element={<ClientDetails />} />
         </Route>
       </Routes>
     </BrowserRouter>
