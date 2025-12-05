@@ -10,8 +10,9 @@ from app.security import get_password_hash, verify_password
 from app.auth import create_access_token, get_current_user # Importar função de criação de token
 from app.database import SessionLocal, engine, Base, get_db
 from app.config import settings, LOGGING_CONFIG # Importar configurações de logging
-from app.routers import upload # Importar router de upload
+from app.routers import upload, admin # Importar routers
 from fastapi.staticfiles import StaticFiles # Importar StaticFiles
+from fastapi.middleware.cors import CORSMiddleware # Importar CORSMiddleware
 
 # Aplicar configuração de logging
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -19,11 +20,26 @@ logger = logging.getLogger("app") # Obter um logger para este módulo
 
 app = FastAPI(title=settings.PROJECT_NAME) # Usar o nome do projeto das configurações
 
+# Configuração do CORS
+origins = [
+    "http://localhost",
+    "http://localhost:5173",  # O endereço do seu frontend
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Mount static files for uploads (Local Development)
 app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 
 # Include Routers
 app.include_router(upload.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def startup_event():

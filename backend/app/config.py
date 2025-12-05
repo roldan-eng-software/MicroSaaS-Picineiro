@@ -1,5 +1,6 @@
 import logging
 import os
+import logging.handlers # Import logging.handlers
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,6 +21,10 @@ class Settings(BaseSettings):
 
 # Initialize settings
 settings = Settings()
+
+# Ensure log directory exists
+log_directory = os.path.dirname("/app/logs/app.log")
+os.makedirs(log_directory, exist_ok=True)
 
 # Configure logging
 LOGGING_CONFIG = {
@@ -46,11 +51,19 @@ LOGGING_CONFIG = {
             "formatter": "json",
             "level": "INFO",
             "stream": "ext://sys.stdout"
+        },
+        "file_handler": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "standard",
+            "level": "INFO",
+            "filename": "/app/logs/app.log", # Log file path inside the container
+            "maxBytes": 10485760, # 10 MB
+            "backupCount": 5
         }
     },
     "loggers": {
         "": {  # root logger
-            "handlers": ["console"],
+            "handlers": ["console", "file_handler"], # Add file_handler here
             "level": "INFO",
             "propagate": False
         },
