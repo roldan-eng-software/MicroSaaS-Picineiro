@@ -102,9 +102,16 @@ class ServiceBase(BaseModel):
     value: str | None = None
     time_spent: str | None = None
     date: datetime | None = None
+    ph: str | None = None
+    chlorine: str | None = None
+    alkalinity: str | None = None
+    remarks: str | None = None
 
 class ServiceCreate(ServiceBase):
     pool_id: int
+
+class ServiceUpdate(ServiceBase):
+    pass
 
 class Service(ServiceBase):
     id: int
@@ -123,6 +130,9 @@ class BudgetBase(BaseModel):
 
 class BudgetCreate(BudgetBase):
     client_id: int
+
+class BudgetUpdate(BudgetBase):
+    pass
 
 class Budget(BudgetBase):
     id: int

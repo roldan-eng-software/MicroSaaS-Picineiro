@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Budget as DBBudget, Client as DBClient, User as DBUser
-from app.schemas import Budget, BudgetCreate
+from app.schemas import Budget, BudgetCreate, BudgetUpdate
 from app.auth import get_current_user
 
 router = APIRouter(
@@ -46,3 +46,37 @@ def read_budget(
     if not budget:
         raise HTTPException(status_code=404, detail="Budget not found")
     return budget
+
+@router.put("/{budget_id}", response_model=Budget)
+def update_budget(
+    budget_id: int,
+    budget_update: BudgetUpdate,
+    db: Session = Depends(get_db),
+    current_user: DBUser = Depends(get_current_user)
+):
+    budget = db.query(DBBudget).join(DBClient).filter(DBBudget.id == budget_id).filter(DBClient.owner_id == current_user.id).first()
+    if not budget:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    
+    update_data = budget_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(budget, key, value)
+
+    db.add(budget)
+    db.commit()
+    db.refresh(budget)
+    return budget
+
+@router.delete("/{budget_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_budget(
+    budget_id: int,
+    db: Session = Depends(get_db),
+    current_user: DBUser = Depends(get_current_user)
+):
+    budget = db.query(DBBudget).join(DBClient).filter(DBBudget.id == budget_id).filter(DBClient.owner_id == current_user.id).first()
+    if not budget:
+        raise HTTPException(status_code=404, detail="Budget not found")
+    
+    db.delete(budget)
+    db.commit()
+    return None

@@ -77,6 +77,10 @@ class Service(Base):
     description = Column(String, nullable=True)
     value = Column(String, nullable=True)
     time_spent = Column(String, nullable=True)
+    ph = Column(String, nullable=True)
+    chlorine = Column(String, nullable=True)
+    alkalinity = Column(String, nullable=True)
+    remarks = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     pool = relationship("Pool", back_populates="services")

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../services/api';
-import { ArrowLeft, Droplets, Wrench, FileText, Plus, Trash2, Calendar, DollarSign, Clock } from 'lucide-react';
+import { ArrowLeft, Droplets, Wrench, FileText, Plus, Trash2, Calendar, DollarSign, Clock, Eye, X, Pencil } from 'lucide-react';
 
 interface Pool {
     id: number;
@@ -27,6 +27,10 @@ interface Service {
     value: string;
     time_spent: string;
     date: string;
+    ph?: string;
+    chlorine?: string;
+    alkalinity?: string;
+    remarks?: string;
 }
 
 interface Budget {
@@ -54,8 +58,27 @@ export default function ClientDetails() {
     const [showBudgetForm, setShowBudgetForm] = useState(false);
 
     const [newPool, setNewPool] = useState({ volume: '', pool_type: 'alvenaria', coating: '', depth: '' });
-    const [newService, setNewService] = useState({ pool_id: '', service_type: 'Manutenção', description: '', value: '', time_spent: '', date: new Date().toISOString().split('T')[0] });
+    const [newService, setNewService] = useState({
+        pool_id: '',
+        service_type: 'Manutenção',
+        description: '',
+        value: '',
+        time_spent: '',
+        date: new Date().toISOString().split('T')[0],
+        ph: '',
+        chlorine: '',
+        alkalinity: '',
+        remarks: ''
+    });
     const [newBudget, setNewBudget] = useState({ items: '', total: '', validity: '' }); // items as JSON string
+
+    // Detail Modal State
+    const [selectedService, setSelectedService] = useState<Service | null>(null);
+    const [selectedBudget, setSelectedBudget] = useState<Budget | null>(null);
+
+    // Edit State
+    const [editingService, setEditingService] = useState<Service | null>(null);
+    const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
 
     useEffect(() => {
         fetchData();
@@ -111,18 +134,47 @@ export default function ClientDetails() {
     }
 
     // --- Services Handlers ---
-    const handleCreateService = async (e: React.FormEvent) => {
+    const handleCreateOrUpdateService = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post('/api/v1/servicos/', newService);
+            if (editingService) {
+                await api.put(`/api/v1/servicos/${editingService.id}`, newService);
+                setEditingService(null);
+            } else {
+                await api.post('/api/v1/servicos/', newService);
+            }
             setShowServiceForm(false);
-            setNewService({ pool_id: '', service_type: 'Manutenção', description: '', value: '', time_spent: '', date: new Date().toISOString().split('T')[0] });
+            setNewService({ pool_id: pools.length > 0 ? pools[0].id.toString() : '', service_type: 'Manutenção', description: '', value: '', time_spent: '', date: new Date().toISOString().split('T')[0], ph: '', chlorine: '', alkalinity: '', remarks: '' });
             fetchData();
         } catch (error) {
-            console.error('Error creating service:', error);
-            alert("Erro ao criar serviço. Verifique se selecionou uma piscina.");
+            console.error('Error saving service:', error);
+            alert("Erro ao salvar serviço. Verifique os dados.");
         }
     };
+
+    const handleEditService = (service: Service) => {
+        setEditingService(service);
+        setNewService({
+            pool_id: service.pool_id.toString(),
+            service_type: service.service_type,
+            description: service.description || '',
+            value: service.value || '',
+            time_spent: service.time_spent || '',
+            date: service.date.split('T')[0],
+            ph: service.ph || '',
+            chlorine: service.chlorine || '',
+            alkalinity: service.alkalinity || '',
+            remarks: service.remarks || ''
+        });
+        setShowServiceForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleCancelEditService = () => {
+        setEditingService(null);
+        setNewService({ pool_id: pools.length > 0 ? pools[0].id.toString() : '', service_type: 'Manutenção', description: '', value: '', time_spent: '', date: new Date().toISOString().split('T')[0], ph: '', chlorine: '', alkalinity: '', remarks: '' });
+        setShowServiceForm(false);
+    }
 
     const handleDeleteService = async (serviceId: number) => {
         if (!confirm("Tem certeza?")) return;
@@ -135,41 +187,69 @@ export default function ClientDetails() {
     };
 
     // --- Budgets Handlers ---
-    const handleCreateBudget = async (e: React.FormEvent) => {
+    const handleCreateOrUpdateBudget = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            // For MVP, items is a simple string description
+            let itemsPayload = newBudget.items;
+            try {
+                JSON.parse(newBudget.items);
+            } catch {
+                itemsPayload = JSON.stringify([{ description: newBudget.items }]);
+            }
+
             const payload = {
                 client_id: id,
-                items: JSON.stringify([{ description: newBudget.items }]), // Mocking JSON structure
+                items: itemsPayload,
                 total: newBudget.total,
                 validity: newBudget.validity ? new Date(newBudget.validity).toISOString() : null
             };
-            await api.post('/api/v1/orcamentos/', payload);
+
+            if (editingBudget) {
+                await api.put(`/api/v1/orcamentos/${editingBudget.id}`, payload);
+                setEditingBudget(null);
+            } else {
+                await api.post('/api/v1/orcamentos/', payload);
+            }
+
             setShowBudgetForm(false);
             setNewBudget({ items: '', total: '', validity: '' });
             fetchData();
         } catch (error) {
-            console.error('Error creating budget:', error);
+            console.error('Error saving budget:', error);
         }
     };
+
+    const handleEditBudget = (budget: Budget) => {
+        setEditingBudget(budget);
+
+        let displayItems = budget.items;
+        try {
+            const parsed = JSON.parse(budget.items);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                displayItems = parsed.map((i: any) => i.description).join('\n');
+            }
+        } catch { }
+
+        setNewBudget({
+            items: displayItems,
+            total: budget.total,
+            validity: budget.validity ? budget.validity.split('T')[0] : ''
+        });
+        setShowBudgetForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleCancelEditBudget = () => {
+        setEditingBudget(null);
+        setNewBudget({ items: '', total: '', validity: '' });
+        setShowBudgetForm(false);
+    }
 
     const handleDeleteBudget = async (budgetId: number) => {
         if (!confirm("Tem certeza?")) return;
         try {
-            await api.delete(`/api/v1/orcamentos/${budgetId}?client_id=${id}`); // sending query param if needed, or check backend logic
-            // Backend endpoint: @router.delete("/{budget_id}") ... 
-            // Wait, backend budgets.py doesn't have delete endpoint in the file I saw?
-            // Checking backend logic: I saw create, read_all, read_one.
-            // If delete is missing, I should add it.
-            // For now, let's assume it might be missing and check later. 
-            // Actually, I should probably check if delete exists in budgets.py.
-            // In the previous `implement_backend_api_routers` log, I created it.
-            // But let's verify.
-            // Re-reading budgets.py content... it was NOT in the viewed file in step 256.
-            // I will implement it now if it's unrelated to the button issue, 
-            // but the user complained about "Create" buttons.
-            // So I will focus on Create first.
+            await api.delete(`/api/v1/orcamentos/${budgetId}`);
+            fetchData();
         } catch (error) {
             console.error(error);
         }
@@ -312,7 +392,8 @@ export default function ClientDetails() {
                         </div>
 
                         {showServiceForm && (
-                            <form onSubmit={handleCreateService} className="bg-gray-50 p-4 rounded-md space-y-4 border border-gray-200">
+                            <form onSubmit={handleCreateOrUpdateService} className="bg-gray-50 p-4 rounded-md space-y-4 border border-gray-200">
+                                <h3 className="text-lg font-medium text-gray-900 mb-4">{editingService ? 'Editar Serviço' : 'Registrar Novo Serviço'}</h3>
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Piscina *</label>
@@ -349,10 +430,41 @@ export default function ClientDetails() {
                                             rows={2}
                                             value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} />
                                     </div>
+
+                                    {/* Chemical Parameters */}
+                                    <div className="sm:col-span-2 grid grid-cols-3 gap-4 border-t pt-4">
+                                        <h4 className="col-span-3 text-sm font-medium text-gray-900 mb-2">Parâmetros Químicos</h4>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">pH</label>
+                                            <input type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                                value={newService.ph} onChange={e => setNewService({ ...newService, ph: e.target.value })}
+                                                placeholder="7.2" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Cloro (ppm)</label>
+                                            <input type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                                value={newService.chlorine} onChange={e => setNewService({ ...newService, chlorine: e.target.value })}
+                                                placeholder="3.0" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Alcalinidade (ppm)</label>
+                                            <input type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                                value={newService.alkalinity} onChange={e => setNewService({ ...newService, alkalinity: e.target.value })}
+                                                placeholder="100" />
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">Observações Técnicas</label>
+                                        <textarea className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                            rows={2}
+                                            value={newService.remarks}
+                                            onChange={e => setNewService({ ...newService, remarks: e.target.value })} />
+                                    </div>
                                 </div>
                                 <div className="flex justify-end space-x-2">
-                                    <button type="button" onClick={() => setShowServiceForm(false)} className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
-                                    <button type="submit" className="px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Salvar Serviço</button>
+                                    <button type="button" onClick={handleCancelEditService} className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
+                                    <button type="submit" className="px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">{editingService ? 'Atualizar' : 'Salvar'}</button>
                                 </div>
                             </form>
                         )}
@@ -376,12 +488,25 @@ export default function ClientDetails() {
                                             <div className="inline-flex items-center text-sm font-semibold text-gray-900">
                                                 R$ {service.value || '0,00'}
                                             </div>
-                                            <div className="text-sm text-gray-500">
-                                                {new Date(service.date).toLocaleDateString()}
+                                            <div className="text-sm text-gray-500 text-right">
+                                                <div>{new Date(service.date).toLocaleDateString()}</div>
+                                                {(service.ph || service.chlorine) && (
+                                                    <div className="text-xs text-blue-600 mt-1">
+                                                        pH: {service.ph || '-'} | Cl: {service.chlorine || '-'}
+                                                    </div>
+                                                )}
                                             </div>
-                                            <button onClick={() => handleDeleteService(service.id)} className="text-red-400 hover:text-red-600 p-2">
-                                                <Trash2 className="h-5 w-5" />
-                                            </button>
+                                            <div className="flex space-x-2">
+                                                <button onClick={() => setSelectedService(service)} className="text-gray-400 hover:text-blue-600 p-2" title="Ver Detalhes">
+                                                    <Eye className="h-5 w-5" />
+                                                </button>
+                                                <button onClick={() => handleEditService(service)} className="text-blue-400 hover:text-blue-600 p-2" title="Editar">
+                                                    <Pencil className="h-5 w-5" />
+                                                </button>
+                                                <button onClick={() => handleDeleteService(service.id)} className="text-red-400 hover:text-red-600 p-2" title="Excluir">
+                                                    <Trash2 className="h-5 w-5" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </li>
                                 ))}
@@ -418,7 +543,8 @@ export default function ClientDetails() {
                         </div>
 
                         {showBudgetForm && (
-                            <form onSubmit={handleCreateBudget} className="bg-gray-50 p-4 rounded-md space-y-4 border border-gray-200">
+                            <form onSubmit={handleCreateOrUpdateBudget} className="bg-gray-50 p-4 rounded-md space-y-4 border border-gray-200">
+                                <h3 className="text-lg font-medium text-gray-900 mb-4">{editingBudget ? 'Editar Orçamento' : 'Novo Orçamento'}</h3>
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                     <div className="sm:col-span-2">
                                         <label className="block text-sm font-medium text-gray-700">Descrição / Itens</label>
@@ -438,8 +564,8 @@ export default function ClientDetails() {
                                     </div>
                                 </div>
                                 <div className="flex justify-end space-x-2">
-                                    <button type="button" onClick={() => setShowBudgetForm(false)} className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
-                                    <button type="submit" className="px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Salvar Orçamento</button>
+                                    <button type="button" onClick={handleCancelEditBudget} className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
+                                    <button type="submit" className="px-3 py-1.5 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">{editingBudget ? 'Atualizar' : 'Salvar'}</button>
                                 </div>
                             </form>
                         )}
@@ -467,6 +593,17 @@ export default function ClientDetails() {
                                         </p>
                                         <p className="text-xs text-blue-500 mt-1">Status: {budget.status}</p>
                                     </div>
+
+                                    <button onClick={() => setSelectedBudget(budget)} className="text-gray-400 hover:text-blue-600 p-2" title="Ver Detalhes">
+                                        <Eye className="h-5 w-5" />
+                                    </button>
+                                    <button onClick={() => handleEditBudget(budget)} className="text-blue-400 hover:text-blue-600 p-2" title="Editar">
+                                        <Pencil className="h-5 w-5" />
+                                    </button>
+                                    <button onClick={() => handleDeleteBudget(budget.id)} className="text-red-400 hover:text-red-600 p-2" title="Excluir">
+                                        <Trash2 className="h-5 w-5" />
+                                    </button>
+
                                     {/* No delete button for budgets yet implemented in backend properly? Visual placeholder */}
                                     {/* <button onClick={() => handleDeleteBudget(budget.id)} className="text-red-400 hover:text-red-600 p-2"><Trash2/></button> */}
                                 </div>
@@ -489,6 +626,145 @@ export default function ClientDetails() {
                     </div>
                 )}
             </div>
+            {/* Service Detail Modal */}
+            {selectedService && (
+                <div className="fixed inset-0 z-10 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setSelectedService(null)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                            <div className="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
+                                <button type="button" className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none" onClick={() => setSelectedService(null)}>
+                                    <span className="sr-only">Fechar</span>
+                                    <X className="h-6 w-6" />
+                                </button>
+                            </div>
+                            <div className="sm:flex sm:items-start">
+                                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">Detalhes do Serviço</h3>
+                                    <div className="mt-4 border-t border-gray-200 pt-4 space-y-3">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Tipo</p>
+                                                <p className="text-sm text-gray-900">{selectedService.service_type}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Data</p>
+                                                <p className="text-sm text-gray-900">{new Date(selectedService.date).toLocaleDateString()}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Valor</p>
+                                                <p className="text-sm text-gray-900">R$ {selectedService.value || '0,00'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Tempo Gasto</p>
+                                                <p className="text-sm text-gray-900">{selectedService.time_spent || '-'}</p>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 mb-1">Parâmetros Químicos</p>
+                                            <div className="bg-gray-50 rounded p-3 grid grid-cols-3 gap-2 text-center">
+                                                <div>
+                                                    <span className="block text-xs text-gray-500">pH</span>
+                                                    <span className="font-medium">{selectedService.ph || '-'}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="block text-xs text-gray-500">Cloro</span>
+                                                    <span className="font-medium">{selectedService.chlorine || '-'}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="block text-xs text-gray-500">Alcalinidade</span>
+                                                    <span className="font-medium">{selectedService.alkalinity || '-'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500">Descrição</p>
+                                            <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{selectedService.description || '-'}</p>
+                                        </div>
+
+                                        {selectedService.remarks && (
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-500">Observações Técnicas</p>
+                                                <p className="text-sm text-gray-900 mt-1 bg-yellow-50 p-2 rounded text-yellow-800">{selectedService.remarks}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                                <button type="button" className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm" onClick={() => setSelectedService(null)}>
+                                    Fechar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Budget Detail Modal */}
+            {selectedBudget && (
+                <div className="fixed inset-0 z-10 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setSelectedBudget(null)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                            <div className="hidden sm:block absolute top-0 right-0 pt-4 pr-4">
+                                <button type="button" className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none" onClick={() => setSelectedBudget(null)}>
+                                    <span className="sr-only">Fechar</span>
+                                    <X className="h-6 w-6" />
+                                </button>
+                            </div>
+                            <div className="sm:flex sm:items-start">
+                                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">Detalhes do Orçamento</h3>
+                                    <div className="mt-4 border-t border-gray-200 pt-4 space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {selectedBudget.status}
+                                            </span>
+                                            <span className="text-sm text-gray-500">
+                                                Validade: {selectedBudget.validity ? new Date(selectedBudget.validity).toLocaleDateString() : 'N/A'}
+                                            </span>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500">Itens / Descrição</p>
+                                            <div className="mt-2 bg-gray-50 rounded p-3 text-sm text-gray-900 whitespace-pre-wrap font-mono">
+                                                {/* Try to parse JSON or show raw */}
+                                                {(() => {
+                                                    try {
+                                                        const items = JSON.parse(selectedBudget.items);
+                                                        return Array.isArray(items)
+                                                            ? items.map((i: any, idx: number) => `- ${i.description}`).join('\n')
+                                                            : JSON.stringify(items, null, 2);
+                                                    } catch {
+                                                        return selectedBudget.items;
+                                                    }
+                                                })()}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-end border-t pt-3">
+                                            <div className="text-right">
+                                                <p className="text-sm text-gray-500">Total</p>
+                                                <p className="text-xl font-bold text-gray-900">R$ {selectedBudget.total}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                                <button type="button" className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm" onClick={() => setSelectedBudget(null)}>
+                                    Fechar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
