@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, User } from 'lucide-react';
+import { Plus, Search, User, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 
@@ -40,11 +40,16 @@ export default function ClientList() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-                    <p className="mt-1 text-sm text-gray-500">
-                        Gerencie sua base de clientes e suas piscinas
-                    </p>
+                <div className="flex items-center space-x-4">
+                    <Link to="/dashboard" className="text-gray-500 hover:text-gray-700">
+                        <ArrowLeft className="h-6 w-6" />
+                    </Link>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                            Gerencie sua base de clientes e suas piscinas
+                        </p>
+                    </div>
                 </div>
                 <Link
                     to="/dashboard/clientes/novo"
